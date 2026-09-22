@@ -1,0 +1,52 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Large Archives & Bundles
+*.tar.gz
+*.zip
+*.tar
+*.gz
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+*.sqlite3
+*.db
+
+# OS / Editor / IDE
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
