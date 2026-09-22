@@ -3,6 +3,7 @@ from app.models.role import Role, RolePermission
 from app.models.user import User, UserRole
 from app.models.menu import Menu, MenuPermission
 from app.models.auth import AuthProvider, RefreshToken, LoginHistory
+from app.models.company import CompanyProfile
 from app.models.recon_config import (
     ReconProfile,
     ReconSchedule,
@@ -62,4 +63,5 @@ __all__ = [
     "ReconManualAdjustment",
     "ReconAuditLog",
     "ReconErrorLog",
+    "CompanyProfile",
 ]

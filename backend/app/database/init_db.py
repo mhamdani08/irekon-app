@@ -3,10 +3,12 @@ from app.models.user import User, UserRole
 from app.models.role import Role, RolePermission
 from app.models.permission import PermissionGroup, Permission
 from app.models.menu import Menu, MenuPermission
+from app.models.company import CompanyProfile
 from app.models.recon_config import (
     ReconProfile, ReconSchedule, ReconSource, ReconSourceConnection,
     ReconSourceFileConfig, ReconFieldMapping, ReconCompareRule, ReconStatus
 )
+
 from app.core.security import get_password_hash
 from sqlalchemy import text
 
