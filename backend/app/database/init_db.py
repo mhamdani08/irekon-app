@@ -87,6 +87,17 @@ def init_db():
                     ("schedule.execute", "Execute Schedule", "schedule", "execute"),
                     ("system.config", "System Config", "system", "config"),
                 ]
+            },
+            {
+                "group_code": "COMPANY_MANAGEMENT",
+                "group_name": "Company Management",
+                "display_order": 6,
+                "permissions": [
+                    ("company.view", "View Company", "company", "view"),
+                    ("company.create", "Create Company", "company", "create"),
+                    ("company.update", "Update Company", "company", "update"),
+                    ("company.delete", "Delete Company", "company", "delete"),
+                ]
             }
         ]
 
@@ -148,6 +159,7 @@ def init_db():
             {"code": "reports", "name": "Reports & Audit", "route": "/reports", "icon": "FileText", "order": 5, "perm": "report.export"},
             {"code": "iam_user", "name": "User Management", "route": "/iam/users", "icon": "Users", "order": 6, "perm": "user.view"},
             {"code": "iam_role", "name": "Role Management", "route": "/iam/roles", "icon": "ShieldCheck", "order": 7, "perm": "role.view"},
+            {"code": "company_setup", "name": "Company Setup", "route": "/company-setup", "icon": "Building2", "order": 8, "perm": "company.view"},
         ]
 
         perm_map = {p.permission_code: p.id for p in all_permissions}
