@@ -1,17 +1,38 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useAuthStore } from "@/store/authStore";
 import { apiFetch } from "@/lib/api";
-import { Shield, Users, Activity, FileText, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, RefreshCw } from "lucide-react";
+
+import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards";
+import ReconTrendChart from "@/components/dashboard/ReconTrendChart";
+import ProfileBreakdownWidget from "@/components/dashboard/ProfileBreakdownWidget";
+import RecentRunsTable from "@/components/dashboard/RecentRunsTable";
+import QuickActionBar from "@/components/dashboard/QuickActionBar";
+
+import {
+  DashboardSummaryResponse,
+  ReconTrendPoint,
+  ProfileBreakdownItem,
+  RecentRunItem,
+} from "@/types/dashboard";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, setAuth } = useAuthStore();
 
+  // State Data Dashboard
+  const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
+  const [trends, setTrends] = useState<ReconTrendPoint[]>([]);
+  const [profileBreakdown, setProfileBreakdown] = useState<ProfileBreakdownItem[]>([]);
+  const [recentRuns, setRecentRuns] = useState<RecentRunItem[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
+
+  // 1. Check Autentikasi User
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) {
@@ -31,6 +52,45 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, router, setAuth]);
 
+  // 2. Fetch Data Dashboard dari Backend API
+  const fetchDashboardData = async () => {
+  try {
+    setLoadingDashboard(true);
+    
+    const [resSummary, resTrends, resBreakdown, resRuns] = await Promise.all([
+      apiFetch<any>("/api/v1/dashboard/summary"),
+      apiFetch<any>("/api/v1/dashboard/trends?days=7"),
+      apiFetch<any>("/api/v1/dashboard/profile-breakdown"),
+      apiFetch<any>("/api/v1/dashboard/recent-runs?limit=5"),
+    ]);
+
+    // Cek di Console Browser (F12) untuk melihat struktur data aslinya
+    console.log("Response Summary:", resSummary);
+
+    // Ambil data (apakah ada di res.data atau langsung di res)
+    const summaryData = resSummary?.data || resSummary;
+    const trendsData = resTrends?.data || resTrends;
+    const breakdownData = resBreakdown?.data || resBreakdown;
+    const runsData = resRuns?.data || resRuns;
+
+    if (summaryData) setSummary(summaryData);
+    if (Array.isArray(trendsData)) setTrends(trendsData);
+    if (Array.isArray(breakdownData)) setProfileBreakdown(breakdownData);
+    if (Array.isArray(runsData)) setRecentRuns(runsData);
+
+  } catch (error) {
+    console.error("Gagal memuat data dashboard:", error);
+  } finally {
+    setLoadingDashboard(false);
+  }
+};
+
+  useEffect(() => {
+    if (isAuthenticated || user) {
+      fetchDashboardData();
+    }
+  }, [isAuthenticated, user]);
+
   if (!isAuthenticated && !user) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center font-medium">
@@ -45,76 +105,64 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col">
         <Header />
         <main className="p-8 space-y-6 flex-1">
-          <div className="flex items-center justify-between">
+          {/* Header & Control Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard Overview</h1>
-              <p className="text-sm text-slate-500 mt-1">iRekon System</p>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Executive & Operations Dashboard
+              </h1>
+              <p className="text-xs text-slate-500 mt-1">
+                Monitoring statistik rekonsiliasi real-time • Selamat datang, <span className="font-semibold text-slate-700">{user?.full_name}</span>
+              </p>
             </div>
-            <div
-              style={{ backgroundColor: "rgba(0, 103, 71, 0.08)", borderColor: "rgba(0, 103, 71, 0.2)", color: "rgb(0, 103, 71)" }}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>RBAC Engine Active</span>
+
+            <div className="flex items-center gap-3">
+              <div
+                style={{ backgroundColor: "rgba(0, 103, 71, 0.08)", borderColor: "rgba(0, 103, 71, 0.2)", color: "rgb(0, 103, 71)" }}
+                className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>RBAC Engine Active</span>
+              </div>
+
+              <button
+                onClick={fetchDashboardData}
+                disabled={loadingDashboard}
+                className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-xs transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingDashboard ? "animate-spin" : ""}`} />
+                <span>Refresh Data</span>
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div
-                style={{ backgroundColor: "rgba(0, 103, 71, 0.1)", color: "rgb(0, 103, 71)" }}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-              >
-                <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">Active User</p>
-                <h3 className="text-lg font-bold text-slate-900 mt-0.5">{user?.full_name}</h3>
-              </div>
-            </div>
+          {/* Quick Action Bar */}
+          <QuickActionBar />
+          {/* 1. Top KPI Cards */}
+          <DashboardKpiCards data={summary} loading={loadingDashboard} />
 
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">Assigned Roles</p>
-                <h3 className="text-lg font-bold text-slate-900 mt-0.5">{user?.roles?.length || 0} Roles</h3>
-              </div>
+          {/* 2. Grid Charts (Trends & Profile Breakdown) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <div className="lg:col-span-2">
+              <ReconTrendChart data={trends} loading={loadingDashboard} />
             </div>
-
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                <Activity className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">Auth Provider</p>
-                <h3 className="text-lg font-bold text-slate-900 mt-0.5">{user?.auth_provider || "LOCAL"}</h3>
-              </div>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div
-                style={{ backgroundColor: "rgba(0, 103, 71, 0.1)", color: "rgb(0, 103, 71)" }}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-              >
-                <FileText className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">System Status</p>
-                <h3 style={{ color: "rgb(0, 103, 71)" }} className="text-lg font-bold mt-0.5">Online</h3>
-              </div>
+            <div>
+              <ProfileBreakdownWidget data={profileBreakdown} loading={loadingDashboard} />
             </div>
           </div>
 
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Assigned Permissions & Capabilities</h2>
+          {/* 3. Recent Runs Table */}
+          <RecentRunsTable data={recentRuns} loading={loadingDashboard} />
+
+          {/* 4. Permissions Badge (Optional Info) */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Assigned Permissions & Capabilities</h2>
             <div className="flex flex-wrap gap-2">
               {user?.roles?.flatMap((r) => r.permissions || []).map((p, idx) => (
                 <span
                   key={idx}
                   style={{ backgroundColor: "rgba(0, 103, 71, 0.06)", borderColor: "rgba(0, 103, 71, 0.15)", color: "rgb(0, 103, 71)" }}
-                  className="px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold"
+                  className="px-2.5 py-1 rounded-lg border text-[11px] font-mono font-semibold"
                 >
                   {p.permission_code}
                 </span>

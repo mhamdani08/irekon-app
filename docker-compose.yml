@@ -64,7 +64,7 @@ services:
       - irekon-network
 
   minio:
-    image: minio/minio:RELEASE.2024-03-21T23-13-43Z
+    image: quay.io/minio/minio:latest
     container_name: irekon-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
