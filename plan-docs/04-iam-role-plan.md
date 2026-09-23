@@ -400,67 +400,68 @@ Audit Login.
 
 # 6. Authentication Flow
 
-## Local Authentication
+Form login aplikasi menggunakan **Single Login Form** tanpa opsi pemilih Authentication Provider (*no provider selector*). Backend secara otomatis menangani routing autentikasi (*Smart Authentication Routing*).
+
+## Single Form Smart Authentication Flow
 
 ```
-Login
-
-↓
-
-Find User
-
-↓
-
-Verify Password
-
-↓
-
-Load Roles
-
-↓
-
-Load Permissions
-
-↓
-
-Generate JWT
+                     Input: Username & Password
+                                 │
+                                 ▼
+                      Cari Username di Database
+                                 │
+                 ┌───────────────┴───────────────┐
+                 │                               │
+           User Ditemukan               User Tidak Ditemukan
+                 │                               │
+        ┌────────┴────────┐                      ▼
+        │                 │            Coba Authenticate LDAP
+      LOCAL             LDAP                     │
+        │                 │               ┌──────┴──────┐
+        ▼                 ▼               │             │
+ Verify bcrypt     LDAP Bind Check     Sukses         Gagal
+     Hash           (Check Pass)          │             │
+        │                 │               ▼             ▼
+        │                 │        Auto-Provision  Return Error
+        │                 │         (JIT Provisioning) "Username/Password
+        │                 │               │             Salah"
+        └────────┬────────┘               │
+                 │                        │
+                 └───────────┬────────────┘
+                             │
+                             ▼
+                    Load Roles & Permissions
+                             │
+                             ▼
+                        Generate JWT
 ```
 
----
+## Detail Mekanisme Autentikasi
 
-## LDAP Authentication
+1. **User Local (Super Admin / Service Account / Internal User)**
+   - Jika data user ditemukan di DB dengan `auth_provider = 'LOCAL'`, backend langsung memverifikasi hash password menggunakan `bcrypt`.
+   - Menjamin akses darurat (*break-glass account*) tetap bisa login meskipun server LDAP sedang tidak dapat dijangkau.
 
-```
-Login
+2. **User LDAP Eksis**
+   - Jika data user ditemukan di DB dengan `auth_provider = 'LDAP'`, backend melakukan *LDAP Bind* ke Active Directory/LDAP server menggunakan kredensial yang diinput.
+   - Jika *LDAP Bind* berhasil, backend memuat role & permission dari DB aplikasi.
 
-↓
+3. **User LDAP Baru (Just-In-Time / JIT Provisioning)**
+   - Jika `username` tidak ditemukan di DB internal, backend akan mencoba autentikasi (*LDAP Bind*) ke LDAP Server.
+   - Jika autentikasi LDAP berhasil:
+     - User otomatis dibuatkan record baru pada tabel `users` (`auth_provider = 'LDAP'`).
+     - Atribut user (nama lengkap, email, no pegawai) diisi dari atribut LDAP.
+     - Diberikan Role default sistem (misal: `OPERATOR`).
+     - Melanjutkan ke proses penerbitan JWT.
+   - Jika autentikasi LDAP gagal:
+     - Mengembalikan pesan kesalahan seragam *"Username atau password salah"*.
 
-LDAP Bind
+## Keamanan & Pengamanan Skenario
 
-↓
+- **Unified Error Message**: Seluruh kegagalan autentikasi (user tidak ditemukan, password lokal salah, atau LDAP bind gagal) mengembalikan pesan kesalahan yang sama untuk mencegah *User Enumeration Attack*.
+- **LDAP Downtime Fallback**: Kegagalan koneksi ke server LDAP dicatat pada log internal, sementara akun `LOCAL` tetap dapat berfungsi normal.
+- **Authorization Separation**: LDAP hanya memverifikasi identitas (*Authentication*). Seluruh otorisasi (*Authorization*, *Roles*, & *Permissions*) dikelola sepenuhnya di database aplikasi.
 
-Success
-
-↓
-
-Cari User pada Database
-
-↓
-
-Load Role
-
-↓
-
-Load Permission
-
-↓
-
-Generate JWT
-```
-
-LDAP hanya digunakan untuk Authentication.
-
-Authorization tetap menggunakan database aplikasi.
 
 ---
 

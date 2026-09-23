@@ -1,6 +1,6 @@
-from typing import Generator, List, Callable
+from typing import Generator, List, Callable, Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.database.session import SessionLocal
@@ -8,7 +8,7 @@ from app.core.security import decode_jwt_token
 from app.models.user import User
 from app.exceptions.base import AuthenticationException, AuthorizationException
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+security = HTTPBearer(auto_error=False)
 
 def get_db() -> Generator:
     db = SessionLocal()
@@ -17,7 +17,11 @@ def get_db() -> Generator:
     finally:
         db.close()
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security), db: Session = Depends(get_db)) -> User:
+    if not credentials or not credentials.credentials:
+        raise AuthenticationException("Token akses tidak ditemukan atau header Authorization kosong")
+    
+    token = credentials.credentials
     payload = decode_jwt_token(token)
     if not payload or payload.get("type") != "access":
         raise AuthenticationException("Token akses tidak valid atau telah kadaluarsa")
