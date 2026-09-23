@@ -200,6 +200,23 @@ export default function JobMonitorPage() {
                 <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
                   {filteredJobs.map((job) => {
                     const pct = Math.round((job.progressCurrent / job.progressTotal) * 100);
+                    const handleRetry = (jobId: string) => {
+                      // TODO: replace with real call, e.g. fetch(`${API_BASE}/api/jobs/${jobId}/retry`, { method: "POST" })
+                      setJobs((prev) =>
+                        prev.map((j) =>
+                          j.id === jobId
+                            ? { ...j, status: "QUEUED", progressCurrent: 0, durationSeconds: 0 }
+                            : j
+                        )
+                      );
+                    };
+
+                    const handleCancel = (jobId: string) => {
+                      // TODO: replace with real call, e.g. fetch(`${API_BASE}/api/jobs/${jobId}/cancel`, { method: "POST" })
+                      setJobs((prev) =>
+                        prev.map((j) => (j.id === jobId ? { ...j, status: "CANCELLED" } : j))
+                      );
+                    };
                     return (
                       <tr key={job.id} className="hover:bg-slate-50 transition">
                         <td className="py-4 px-4">
@@ -243,12 +260,20 @@ export default function JobMonitorPage() {
                               <FileText size={16} />
                             </button>
                             {job.status === "FAILED" && (
-                              <button className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Retry job">
+                              <button
+                                onClick={() => handleRetry(job.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
+                                title="Retry job"
+                              >
                                 <RotateCcw size={16} />
                               </button>
                             )}
                             {job.status === "RUNNING" && (
-                              <button className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="Cancel job">
+                              <button
+                                onClick={() => handleCancel(job.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                                title="Cancel job"
+                              >
                                 <XCircle size={16} />
                               </button>
                             )}
