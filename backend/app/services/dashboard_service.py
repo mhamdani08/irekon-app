@@ -7,9 +7,6 @@ from app.schemas.dashboard import (
     RecentRunItem,
 )
 
-# -------------------------------------------------------------------
-# MOCK RAW DATA (Menyimulasikan baris data mentah dari Database)
-# -------------------------------------------------------------------
 RAW_RECON_RUNS = [
     {
         "run_id": "#RUN-99201",
@@ -83,9 +80,6 @@ RAW_RECON_RUNS = [
     },
 ]
 
-# -------------------------------------------------------------------
-# RAW DISCREPANCIES (Nilai Tidak Diubah)
-# -------------------------------------------------------------------
 RAW_DISCREPANCIES = [
     {"id": 101, "trx_ref": "TRX-PLN-001", "profile": "PLN Settlement", "amount": 100000.0, "status": "MISMATCH"},
     {"id": 102, "trx_ref": "TRX-QRIS-088", "profile": "QRIS Merchant", "amount": 1500000.0, "status": "MISMATCH"},
@@ -97,9 +91,6 @@ RAW_DISCREPANCIES = [
     {"id": 108, "trx_ref": "TRX-PLN-901", "profile": "PLN Settlement", "amount": 0.0, "status": "MATCHED"},
 ]
 
-# -------------------------------------------------------------------
-# RAW APPROVALS (Nilai Tidak Diubah)
-# -------------------------------------------------------------------
 RAW_APPROVALS = [
     {"id": 1, "run_id": "#RUN-99199", "type": "Force Match", "requester": "Operator A", "status": "PENDING"},
     {"id": 2, "run_id": "#RUN-99198", "type": "Write-Off Discrepancy", "requester": "Supervisor B", "status": "PENDING"},
@@ -109,9 +100,6 @@ RAW_APPROVALS = [
     {"id": 6, "run_id": "#RUN-99200", "type": "Manual Adjustment", "requester": "Operator A", "status": "REJECTED"},
 ]
 
-# -------------------------------------------------------------------
-# SERVICE CLASS WITH ACTUAL CALCULATION LOGIC
-# -------------------------------------------------------------------
 class DashboardService:
 
     @staticmethod
